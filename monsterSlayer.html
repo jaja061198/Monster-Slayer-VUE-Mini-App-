@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monster Slayer</title>
+    <script src="vue.js"></script>
+    <link rel="stylesheet" href="css/foundation.min.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+    <section class="row">
+        <div class="small-6 columns">
+            <h1 class="text-center">YOU</h1>
+            <div class="healthbar">
+                <div class="healthbar text-center" style="background-color: green; margin: 0; color: white;" :style="{width: player + '%'}">
+                        {{ player }}
+                </div>
+            </div>
+        </div>
+        <div class="small-6 columns">
+            <h1 class="text-center">MONSTER</h1>
+            <div class="healthbar">
+                <div class="healthbar text-center" style="background-color: green; margin: 0; color: white;" :style="{width: monster + '%'}">
+                    {{ monster }}
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="row controls" v-if="!gameStatus">
+        <div class="small-12 columns">
+            <button id="start-game" @click="startGame">START NEW GAME</button>
+        </div>
+    </section>
+    <section class="row controls">
+        <div class="small-12 columns" v-if="gameStatus">
+            <button id="attack" @click="attackNow" >ATTACK</button>
+            <button id="special-attack" @click="specialAttack">SPECIAL ATTACK</button>
+            <button id="heal" @click="heal">HEAL</button>
+            <button id="give-up" @click="giveUp">GIVE UP</button>
+        </div>
+    </section>
+    <section class="row log" v-if="turns.length > 0">
+        <div class="small-12 columns">
+            <ul>
+                <li v-for="(turn, index) in turns" :key="index" :class="{'player-turn' : turn.TYPE,'monster-turn' : !turn.TYPE}">
+                    {{ turn.MSG }}
+                </li>
+            </ul>
+        </div>
+    </section>
+</div>
+<script>
+    var app = new Vue({
+        el : '#app',
+        data : {
+            player : 100,
+            monster : 100,
+            gameStatus : false,
+            turns : [],
+        },
+        methods : {
+
+            startGame : function () {
+                this.gameStatus = !this.gameStatus;
+                this.player = 100;
+                this.monster = 100;
+            },
+
+            attackNow : function () {
+
+                let playerAttack = this.calculateDamage(3,10);
+
+                let monsterAttack = this.calculateDamage(5,12);
+
+                this.monster -= playerAttack;
+                this.turns.unshift({
+                    'TYPE' : true,
+                    'MSG' : 'Player hits for '+ playerAttack
+                });
+                if (this.checkWin()) {
+                    return;
+                }
+
+                this.monsterAttacks();
+                
+            },
+
+            heal : function () {
+                if (this.player >= 100) {
+                    return false;
+                }
+                let heal = Math.max(Math.floor(Math.random() * 10) + 1 , 5);
+                this.player += heal;
+                this.turns.unshift({
+                    'TYPE' : '2',
+                    'MSG' : 'Player heals for '+ heal
+                });
+                this.monsterAttacks();
+
+            },
+
+            specialAttack : function () {
+
+                let playerSpecialAttack = this.calculateDamage(5,15);
+                
+                this.monster -= playerSpecialAttack;
+
+                this.turns.unshift({
+                    'TYPE' : true,
+                    'MSG' : 'Player Special Attack hits for '+ playerSpecialAttack
+                });
+
+                if (this.checkWin()) {
+                    return;
+                }
+
+                this.monsterAttacks();
+
+            },
+
+            giveUp : function () {
+                this.gameStatus = false;
+                this.turns = [];
+            },
+
+            monsterAttacks : function () {
+                let monsterAttack = this.calculateDamage(5,12);
+                this.player -= monsterAttack;
+                this.checkWin(); 
+                this.turns.unshift({
+                    'TYPE' : false,
+                    'MSG' : 'Monster hits for '+ monsterAttack
+                });
+            },
+
+            calculateDamage : function (min , max){
+                return Math.max(Math.floor(Math.random() * max) + 1 , min);
+            },
+
+            checkWin : function () {
+                if (this.monster <= 0) {
+                    if (confirm('You Won! New Game ?')) {
+                        this.startGame();
+                    }
+                    else {
+                        this.gameStatus = false;
+                    }
+                    return true;
+                } else if (this.player <= 0 ) { 
+                    if (confirm('You Lost! New Game ?')) {
+                        this.startGame();
+                    }
+                    else {
+                        this.gameStatus = false;
+                    }
+                    return true;
+                }
+                return false;
+            },
+        }
+
+    });
+</script>
+</body>
+</html>
